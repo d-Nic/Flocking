@@ -1,2 +1,2 @@
 # Flocking
-Flocking simulator loosley based of flocking behaviour algorithm
+Flocking simulator loosley based off of flocking behaviour algorithm
