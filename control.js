@@ -5,32 +5,33 @@ body.style.backgroundColor = '#000721';
 let moveSpeed = 1 // Speed at which nodes move
 let angleThresh = 40 // Max angle at which nodes will turn
 let turnRate = 1000 // How often a node turns
-let distThresh = 100 // How close nodes are to notice eachother
+let distThresh = 35 // How close nodes are to notice eachother
 let tooClose = 10
-let NUM_NODES = 65
+let NUM_NODES = 50
 let ACTIVE = true
-//let reset = body.getElementById('rst')
 
 let nodes = [];
 
-const average = arr => arr.reduce( (x, y) => parseInt(x.getAttribute('direction')) + parseInt(y.getAttribute('direction')), 0 ) / arr.length
-
+// Creates nodes all at random positions and directions
 function startup() {
-	//let children = document.body.children;
-	let toRemove = document.body.children
+
+	// If page is to be reset
 	if (nodes.length > 0) { 
 		location.reload()
 	}
+
 	nodes = []
-	ACTIVE = true
+
 	for (let i = 0; i < NUM_NODES; i++) {
-		
+
+		// Aesthetics
 		let childNode = document.createElement('div');
 		childNode.style.backgroundColor = '#dfe8f7';
 		childNode.style.position = 'absolute';
-		childNode.style.height = '5px';
-		childNode.style.width = '5px';
+		childNode.style.height = '8px';
+		childNode.style.width = '8px';
 		
+		// Position
 		childNode.style.left = (Math.floor((Math.random() * window.innerWidth) + 1)).toString().concat('px');
 		childNode.style.top = (Math.floor((Math.random() *  window.innerHeight) + 1)).toString().concat('px');
 		childNode.setAttribute('phase', turnRate)
@@ -49,12 +50,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function degreeToCoords(degree) {
-	if (degree < 90) {
-		return3
-	}
-}
-
+// Returns nodes within a distThresh radius
 function getNear(node) {
 	nearNodes = [];
 	for (let i = 0; i < nodes.length; i++) {
@@ -62,44 +58,24 @@ function getNear(node) {
 			let distY = (parseInt(node.style.top)-parseInt(nodes[i].style.top))*(parseInt(node.style.top)-parseInt(nodes[i].style.top));
 			let distX = (parseInt(node.style.left)-parseInt(nodes[i].style.left))*(parseInt(node.style.left)-parseInt(nodes[i].style.left));
 			let dist = Math.sqrt(distY+distX);
-			//console.log('DISTANCE', dist);
 			if (dist < distThresh) {
 				nearNodes.push(nodes[i])
 			}
 		}
 	}	
-	//console.log(nearNodes)
 	return nearNodes;
 }
 
-function getClose(node, nearby) {
-	nearNodes = [];
-	for (let i = 0; i < nearby.length; i++) {
-		if (nearby[i] != node) {
-			let distY = (parseInt(node.style.top)-parseInt(nearby[i].style.top))*(parseInt(node.style.top)-parseInt(nearby[i].style.top));
-			let distX = (parseInt(node.style.left)-parseInt(nearby[i].style.left))*(parseInt(node.style.left)-parseInt(nearby[i].style.left));
-			let dist = Math.sqrt(distY+distX);
-			//console.log('DISTANCE', dist);
-			if (dist < tooClose) {
-				nearNodes.push(nodes[i])
-			}
-		}
-	}	
-	//console.log(nearNodes)
-	return nearNodes;
-}
-
+// Returns closest nodes within a nearby radius
 function closest(node, nearby) {
-
 	nearNodes = [];
-    let closest = 1800
+    let closest = window.innerWidth
     let toSend = false
 	for (let i = 0; i < nearby.length; i++) {
 		if (nearby[i] != node) {
 			let distY = (parseInt(node.style.top)-parseInt(nearby[i].style.top))*(parseInt(node.style.top)-parseInt(nearby[i].style.top));
 			let distX = (parseInt(node.style.left)-parseInt(nearby[i].style.left))*(parseInt(node.style.left)-parseInt(nearby[i].style.left));
 			let dist = Math.sqrt(distY+distX);
-			//console.log('DISTANCE', dist);
 			if (dist < closest) {
                 closest = dist
 				toSend = nearby[i]
@@ -110,34 +86,28 @@ function closest(node, nearby) {
 }
 
 
-
+// Turn set node turn values based on given direction
 function turnNode(node, direction) {
-	//let newDirection = parseInt(node.getAttribute('direction')
 	if (direction) {
 		node.setAttribute('direction', direction)
 		xDir = Math.sin((direction%360) * Math.PI/180)*10;
 		yDir = Math.cos((direction%360) * Math.PI/180)*10;
-		//console.log('Accepted',newDirection)
 		node.setAttribute('phase',0)
-		//let newX = parseInt(node.getAttribute('xdir')) + xDir
-		//let newY = parseInt(node.getAttribute('xdir')) + yDir
 		node.setAttribute('xdir',xDir)
 		node.setAttribute('ydir',yDir)
 
 		return
 	} else {
-
+		// If no direction is given, find a random direction that isn't vastly different to current one
+		// this difference is defined by angleThresh
 		while (true) {
-
 			let newDirection = Math.floor((Math.random() * 360) + 1);
 			// Right to left
-			//console.log('Turning to ', newDirection);
 			if (newDirection > 270 && parseInt(node.getAttribute('direction')) < 90) { 
 				if ((Math.abs(newDirection%90) - parseInt(node.getAttribute('direction'))) < angleThresh) {
 					node.setAttribute('direction', newDirection)
 					xDir = Math.sin(newDirection * Math.PI/180)*10;
 					yDir = Math.cos(newDirection * Math.PI/180)*10;
-					//console.log('Accepted',newDirection)
 					node.setAttribute('phase',0)
 					node.setAttribute('xdir',xDir)
 					node.setAttribute('ydir',yDir)
@@ -148,7 +118,6 @@ function turnNode(node, direction) {
 				node.setAttribute('direction', newDirection)
 				xDir = Math.sin(newDirection * Math.PI/180)*10;
 				yDir = Math.cos(newDirection * Math.PI/180)*10;
-				//console.log('Accepted',newDirection)
 				node.setAttribute('phase',0)
 				node.setAttribute('xdir',xDir)
 				node.setAttribute('ydir',yDir)
@@ -157,8 +126,10 @@ function turnNode(node, direction) {
 		}
 	}
 }
+
+// Move in average direction of nodes within distThresh
 function align (node) {
-	// Move in average direction of nodes within distThresh
+	
 	let nearNodes = getNear(node);
 	if (nearNodes.length == 0) {
 		return false;
@@ -168,15 +139,15 @@ function align (node) {
 		total += parseInt(nearNodes[i].getAttribute('direction'));
 	}
 	let averageDirection = total/nearNodes.length;
-	//console.log('Aligning with average', parseInt(averageDirection))
 
-	//TODO : Make the turning average between current direction and new, rather than instant
+	// TODO : Make the turning average between current direction and new, rather than instant
 	turnNode(node, (parseInt(averageDirection) + parseInt(node.getAttribute('direction')))/2);
-	//turnNode(node, parseInt(averageDirection));
+
 }
 
+// Move away from nearby nodes within distThresh if too close 
 function separation (node) {
-	// Move away from nearby nodes within distThresh if too close 
+	
 	let nearNodes = getNear(node);
 	if (nearNodes.length == 0) {
 		return false;
@@ -185,22 +156,19 @@ function separation (node) {
 	if (closeNodes == false ) {
 		return false
 	}
-	//node.setAttribute('direction', parseInt(node.getAttribute('direction') + 5));
-	//return;
+
 	let total = 0;
 	let newX = 0;
 	let newY = 0;
 	let newDir = 0;
     console.log(parseInt(closeNodes.getAttribute('direction')) + 180);
 	let avDir = parseInt(closeNodes.getAttribute('direction')) + 180;
-	//node.setAttribute('xdir', newX);
-	//node.setAttribute('ydir', newY);
-	//node.setAttribute('direction', (avDir +parseInt(node.getAttribute('direction')))/2);
+
     node.setAttribute('direction', avDir);
 }
 
+// Move towards nodes within distThresh
 function cohesion (node) {
-	// Move towards nodes within distThresh
 	let nearNodes = getNear(node);
 	if (nearNodes.length == 0) {
 		return false;
@@ -220,8 +188,7 @@ function cohesion (node) {
 	node.setAttribute('xdir', newX);
 	node.setAttribute('ydir', newY);
 	node.setAttribute('direction', avDir);
-	//turnNode(node, (parseInt(averageDirection) + parseInt(node.getAttribute('direction')))/2);
-	//turnNode(node, parseInt(averageDirection));
+
 }
 
 // Keep nodes inside the window size
@@ -252,32 +219,29 @@ function keepInside(node) {
 
 }
 
-//let phase = 0;
-
 async function moveHeadNode() {
-	while (ACTIVE) {
+	while (true) {
 		for (let i = 0; i < nodes.length; i++) {
            
 			keepInside(nodes[i])
-			// Update the nodes movement
+
+			// Apply the 3 rules
+			align(nodes[i])
+			cohesion(nodes[i])
+			separation(nodes[i]) // TODO: Needs to be improved
+
+			// Moves node in current direction
+			turnNode (nodes[i], parseInt(nodes[i].getAttribute('direction'))) 
+
 			var phase = parseInt(nodes[i].getAttribute('phase'))
-
-				align(nodes[i])
-
-				cohesion(nodes[i])
-				//separation(nodes[i])
-				turnNode (nodes[i], parseInt(nodes[i].getAttribute('direction'))) // Moves the nodes in their current direction
 			if (phase == turnRate) {
+				// If the node is to be turned (used to add some random movement)
 				phase = 0
-				//nodes[i].setAttribute('direction',Math.floor((Math.random() * 360) + 1))
 				nodes[i].setAttribute('speed',Math.floor((Math.random() * 3) + 1))
 				turnNode(nodes[i],false)
 			}
-				
-			//}
 			nodes[i].setAttribute('phase', phase+1)
 		}
-
 		phase++;
 		await sleep(moveSpeed);
 	}
