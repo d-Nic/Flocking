@@ -5,9 +5,9 @@ body.style.backgroundColor = '#000721';
 let moveSpeed = 1 // Speed at which nodes move
 let angleThresh = 40 // Max angle at which nodes will turn
 let turnRate = 1000 // How often a node turns
-let distThresh = 35 // How close nodes are to notice eachother
+let distThresh = 50 // How close nodes are to notice eachother
 let tooClose = 10
-let NUM_NODES = 50
+let NUM_NODES = 40
 let ACTIVE = true
 
 let nodes = [];
@@ -39,7 +39,7 @@ function startup() {
 		childNode.setAttribute('ydir',0)
 		childNode.setAttribute('id','main')
 		childNode.setAttribute('direction',Math.floor((Math.random() * 360) + 1))
-		childNode.setAttribute('speed',Math.floor((Math.random() * 2) + 1))
+		childNode.setAttribute('speed',Math.floor((Math.random() * 1) + 1))
 		nodes.push(childNode);
 		body.appendChild(childNode);
 	}
@@ -66,19 +66,19 @@ function getNear(node) {
 	return nearNodes;
 }
 
-// Returns closest nodes within a nearby radius
-function closest(node, nearby) {
+// Returns closest node in a list 
+function closest(node, cNodes) {
 	nearNodes = [];
     let closest = window.innerWidth
     let toSend = false
-	for (let i = 0; i < nearby.length; i++) {
-		if (nearby[i] != node) {
-			let distY = (parseInt(node.style.top)-parseInt(nearby[i].style.top))*(parseInt(node.style.top)-parseInt(nearby[i].style.top));
-			let distX = (parseInt(node.style.left)-parseInt(nearby[i].style.left))*(parseInt(node.style.left)-parseInt(nearby[i].style.left));
+	for (let i = 0; i < cNodes.length; i++) {
+		if (cNodes[i] != node) {
+			let distY = (parseInt(node.style.top)-parseInt(cNodes[i].style.top))*(parseInt(node.style.top)-parseInt(cNodes[i].style.top));
+			let distX = (parseInt(node.style.left)-parseInt(cNodes[i].style.left))*(parseInt(node.style.left)-parseInt(cNodes[i].style.left));
 			let dist = Math.sqrt(distY+distX);
 			if (dist < closest) {
                 closest = dist
-				toSend = nearby[i]
+				toSend = cNodes[i]
 			}
 		}
 	}	
@@ -152,8 +152,8 @@ function separation (node) {
 	if (nearNodes.length == 0) {
 		return false;
 	}
-	let closeNodes = closest (node, 200)
-	if (closeNodes == false ) {
+	let closeNode = closest (node, nearNodes)
+	if (closeNode == false ) {
 		return false
 	}
 
@@ -161,9 +161,9 @@ function separation (node) {
 	let newX = 0;
 	let newY = 0;
 	let newDir = 0;
-    console.log(parseInt(closeNodes.getAttribute('direction')) + 180);
-	let avDir = parseInt(closeNodes.getAttribute('direction')) + 180;
-
+    console.log(parseInt(closeNode.getAttribute('direction')) + 180);
+	let avDir = parseInt(closeNode.getAttribute('direction')) + 180;
+	console.log('Applying separation')
     node.setAttribute('direction', avDir);
 }
 
@@ -226,9 +226,11 @@ async function moveHeadNode() {
 			keepInside(nodes[i])
 
 			// Apply the 3 rules
-			align(nodes[i])
-			cohesion(nodes[i])
+
+			
 			separation(nodes[i]) // TODO: Needs to be improved
+			cohesion(nodes[i])
+			align(nodes[i])
 
 			// Moves node in current direction
 			turnNode (nodes[i], parseInt(nodes[i].getAttribute('direction'))) 
